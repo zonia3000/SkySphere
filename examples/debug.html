@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Example for debug</title>
+		<script src="../node_modules/grunt-contrib-requirejs/node_modules/requirejs/require.js"></script>
+		<script>
+			require.config({
+				baseUrl: '../src',
+				paths: {
+					constellations: '../data/constellations'
+				}
+			});
+		</script>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+			}
+			#sky1 {
+				overflow: hidden;
+				border: 1px #ddd solid;
+				background-color: #222;
+				margin: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas id="sky1"></canvas>
+		<button type="button" id="zoom_minus">Zoom -</button>
+		<button type="button" id="zoom_plus">Zoom +</button>
+		<button type="button" id="center_sun">Center Sun</button>
+		<script>
+			require(['SkySphere'], function(SkySphere) {
+				var sky1 = new SkySphere('sky1', {
+					width: window.innerWidth,
+					height: 500,
+					customOnClick: function(data) {
+						alert(data);
+					}
+				});
+				sky1.addCustomObject(5.58814, -4.92319, { clickData: 'M42' });
+				var sun = sky1.addCustomObject(3.58814, -4.92319, { clickData: 'sun', color: '#ffe400', radius: 5 });
+				sky1.drawSky();
+				
+				document.getElementById('center_sun').addEventListener('click', function() {
+					sky1.centerSkyPoint(sun);
+				});
+
+				var zoomFactor = 1;
+				document.getElementById('zoom_minus').addEventListener('click', function() {
+					zoomFactor -= 0.1;
+					sky1.absoluteZoom(zoomFactor);
+				});
+				document.getElementById('zoom_plus').addEventListener('click', function() {
+					zoomFactor += 0.1;
+					sky1.absoluteZoom(zoomFactor);
+				});
+				
+				window.addEventListener('resize', function() {
+					sky1.setContainerSize(window.innerWidth, sky1.containerHeight, true);
+				});
+			});
+		</script>
+	</body>
+</html>
