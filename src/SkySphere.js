@@ -252,12 +252,10 @@ define(['constellations'], function(constellations) {
 	 * @param {float} dx - position offset on x axis.
 	 * @param {float} dy - position offset on y axis.
 	 */
-	SkySphere.prototype.rotateXY = function(dy, dx) {
-		var x, y;
+	SkySphere.prototype.rotateXY = function(dx, dy) {
+		var x, y, z, k;
 		
 		var sindx = Math.sin(dx), cosdx = Math.cos(dx), sindy = Math.sin(dy), cosdy = Math.cos(dy);
-		var my1 = sindx * sindy, my3 = sindx * cosdy;
-		var mz1 = cosdx * sindy, mz3 = cosdx * cosdy;
 		
 		var centerX = this.containerWidth / 2;
 		var centerY = this.containerHeight / 2;
@@ -265,9 +263,12 @@ define(['constellations'], function(constellations) {
 		this.applyTransform(function(skyPoint) {
 			x = skyPoint.x - centerX;
 			y = -skyPoint.y + centerY;
-			skyPoint.x = x * cosdy + skyPoint.z * sindy + centerX;
-			skyPoint.y = -x * my1 - y * cosdx + skyPoint.z * my3 + centerY;
-			skyPoint.z = -x * mz1 + y * sindx + skyPoint.z * mz3; 
+			z = skyPoint.z;
+			
+			k = z * cosdx -x * sindx;
+			skyPoint.x = x * cosdx + z * sindx + centerX;
+			skyPoint.y = sindy * k -y * cosdy + centerY;
+			skyPoint.z = y * sindy + cosdy * k;
 		});
 	};
 	
