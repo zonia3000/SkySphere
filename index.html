@@ -13,6 +13,7 @@
     <section class="page-header">
       <h1 class="project-name">SkySphere</h1>
       <h2 class="project-tagline">A lightweight JavaScript sky map.</h2>
+      <canvas id="sky"></canvas><br/>
       <a href="https://github.com/zonia3000/SkySphere" class="btn">View on GitHub</a>
       <a href="https://github.com/zonia3000/SkySphere/zipball/master" class="btn">Download .zip</a>
       <a href="https://github.com/zonia3000/SkySphere/tarball/master" class="btn">Download .tar.gz</a>
@@ -73,6 +74,9 @@
             pageTracker._trackPageview();
             } catch(err) {}
           </script>
-
+    <script src="https://cdn.rawgit.com/zonia3000/SkySphere/master/dist/sky-sphere.min.js"></script>
+    <script>
+      var sky = new SkySphere('sky');
+    </script>
   </body>
 </html>
