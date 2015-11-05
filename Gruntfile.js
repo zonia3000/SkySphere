@@ -26,6 +26,9 @@ module.exports = function(grunt) {
 		" * Contact: <%= pkg.author.email %>\n" +
 		" *\n" +
 		" * Copyright (c) <%= grunt.template.today(\"yyyy\") %> <%= pkg.author.name %>\n" +
+		" * License: <%= pkg.licenses[0].url %>\n"+
+		" *\n" +
+		" * Stars data credits: https://edu.kde.org/kstars, http://www.astronexus.com/hyg\n" +
 		" * -------------------------------------------------------\n" +
 		" */\n" +
 		"\n",
