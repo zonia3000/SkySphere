@@ -1,0 +1,32 @@
+#sky {
+	margin: 0 -6rem;
+	background-color: #222;
+}
+
+#sky-wrapper {
+	position: relative;
+	margin-bottom: 9px;
+}
+
+#sky-wrapper .icon {
+	position: absolute;
+	cursor: pointer;
+	font-size: 20px;
+	right: 0;
+	-webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+#zoom-in {
+	top: 20px;
+}
+#zoom-out {
+	top: 50px;
+}
+#target {
+	top: 80px;
+}
