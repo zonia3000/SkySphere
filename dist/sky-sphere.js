@@ -5477,18 +5477,18 @@ SkySphere = function (constellations) {
   // All created SkySpheres
   var instances = [];
   /**
-  * Convert a declination angle from degree to radians (in range from 0 to 2PI).
-  * @private
-  * @param {float} dec - declination angle in degree (from -90 to 90).
-  */
+   * Convert a declination angle from degree to radians (in range from 0 to 2PI).
+   * @private
+   * @param {float} dec - declination angle in degree (from -90 to 90).
+   */
   function dec2rad(dec) {
     return (dec + 90) * 2 * Math.PI / 360;
   }
   /**
-  * Convert a right ascension angle from degree to radians (in range from 0 to 2PI).
-  * @private
-  * @param {float} ra - right ascension angle in hours (from 0 to 24).
-  */
+   * Convert a right ascension angle from degree to radians (in range from 0 to 2PI).
+   * @private
+   * @param {float} ra - right ascension angle in hours (from 0 to 24).
+   */
   function ra2rad(ra) {
     return ra * 2 * Math.PI / 24;
   }
@@ -5513,20 +5513,24 @@ SkySphere = function (constellations) {
     }
   }
   /**
-  * Represents a sky map.
-  * @constructor
-  * @alias SkySphere
-  * @param {string} elementId - canvas id
-  * @param {object} options - sky map options
-  * @description Supported options:
-  * <ul>
-  * <li><strong>width</strong>: container width in pixels.</li>
-  * <li><strong>height</strong>: container height in pixels.</li>
-  * <li><strong>initialRadius</strong>: initial radius of the sphere in pixels.</li>
-  * <li><strong>backgroundColor</strong>: sky background color in hexadecimal format.</li>
-  * <li><strong>customOnClick</strong>: function to be executed when clicking on added custom objects.</li>
-  * </ul>
-  */
+   * Represents a sky map.
+   * @constructor
+   * @alias SkySphere
+   * @param {string} elementId - canvas id
+   * @param {object} options - sky map options
+   * @description Supported options:
+   * <ul>
+   * <li><strong>width</strong>: container width in pixels.</li>
+   * <li><strong>height</strong>: container height in pixels.</li>
+   * <li><strong>initialRadius</strong>: initial radius of the sphere in pixels.</li>
+   * <li><strong>backgroundColor</strong>: sky background color in hexadecimal format.</li>
+   * <li><strong>customOnClick</strong>: function to be executed when clicking on added custom objects.</li>
+   * <li><strong>getObjectText</strong>: function used to retrieve text to display when mouse goes over a custom object.</li>
+   * <li><strong>font</strong>: font setted on canvas.</li>
+   * <li><strong>highlightColor</strong>: highlight color of object currently under cursor.</li>
+   * <li><strong>highlightSize</strong>: width of highlight line.</li>
+   * </ul>
+   */
   function SkySphere(elementId, options) {
     this.options = options;
     this.init(elementId);
@@ -5537,6 +5541,7 @@ SkySphere = function (constellations) {
   SkySphere.prototype.starPoints = [];
   SkySphere.prototype.objectPoints = [];
   SkySphere.prototype.isMoving = false;
+  SkySphere.prototype.overObjectIndex = null;
   SkySphere.prototype.init = function (elementId) {
     var self = this;
     this.canvas = document.getElementById(elementId);
@@ -5589,13 +5594,39 @@ SkySphere = function (constellations) {
         for (var i = 0; i < self.objectPoints.length; i++) {
           var skyPoint = self.objectPoints[i];
           if (Math.abs(skyPoint.x - x) < area && Math.abs(skyPoint.y - y) < area && skyPoint.z >= 0) {
-            self.options.customOnClick(skyPoint.data.clickData);
+            self.options.customOnClick(skyPoint.data);
             return;
           }
         }
       }
     }
     this.canvas.addEventListener(supportTouch ? 'touchstart' : 'mousedown', startMove);
+    this.canvas.addEventListener('mousemove', function (e) {
+      clientRect = self.canvas.getBoundingClientRect();
+      var x = e.clientX - clientRect.left;
+      var y = e.clientY - clientRect.top;
+      var i = 0, overIndex = null;
+      while (i < self.objectPoints.length && overIndex === null) {
+        skyPoint = self.objectPoints[i];
+        if (skyPoint.z > 0 && Math.abs(x - skyPoint.x) <= area && Math.abs(y - skyPoint.y) <= area) {
+          overIndex = i;
+        }
+        i++;
+      }
+      if (self.overObjectIndex !== overIndex) {
+        self.overObjectIndex = overIndex;
+        self.drawSky();
+      }
+    });
+    this.canvas.addEventListener('mousewheel', function (e) {
+      clientRect = self.canvas.getBoundingClientRect();
+      var x = e.clientX - clientRect.left;
+      var y = e.clientY - clientRect.top;
+      if (Math.pow(x - self.containerWidth / 2, 2) + Math.pow(y - self.containerHeight / 2, 2) <= Math.pow(self.radius, 2)) {
+        e.preventDefault();
+        self.zoom(e.wheelDeltaY < 0 ? 0.9 : 1.1);
+      }
+    });
   };
   SkySphere.prototype.generateSkyPoint = function (ra, dec, data) {
     var skyPoint = {
@@ -5609,9 +5640,9 @@ SkySphere = function (constellations) {
     return skyPoint;
   };
   /**
-  * Draw constellations lines and stars and added custom objects.
-  * @private
-  */
+   * Draw constellations lines and stars and added custom objects.
+   * @private
+   */
   SkySphere.prototype.drawSky = function () {
     var context = this.context;
     var i, star, skyPoint, skyPoint1, skyPoint2, radius;
@@ -5653,11 +5684,34 @@ SkySphere = function (constellations) {
         context.fill();
       }
     }
+    if (this.overObjectIndex !== null) {
+      var highlightSize = this.options.highlightSize || 3;
+      context.lineWidth = highlightSize;
+      // Draw highlighting circle on object under current mouse position
+      skyPoint = this.objectPoints[this.overObjectIndex];
+      context.strokeStyle = context.fillStyle = this.options.highlightColor || '#ffff00';
+      context.beginPath();
+      radius = skyPoint.data.radius || 2;
+      context.arc(Math.floor(skyPoint.x), Math.floor(skyPoint.y), radius + highlightSize, 0, 2 * Math.PI, true);
+      context.stroke();
+      // Draw text beside highlighted object
+      if (this.options.getObjectText) {
+        context.font = this.options.font || '15px serif';
+        var text = this.options.getObjectText(skyPoint.data);
+        var textX = skyPoint.x + radius + highlightSize;
+        var textY = skyPoint.y - radius - highlightSize;
+        context.strokeStyle = '#000';
+        context.strokeText(text, textX, textY);
+        context.lineWidth = 1;
+        context.fillText(text, textX, textY);
+      }
+      context.lineWidth = 1;
+    }
   };
   /**
-  * Apply a transformation to all elements of the sky.
-  * @param {function} transform - function to apply to each sky point passed as argument.
-  */
+   * Apply a transformation to all elements of the sky.
+   * @param {function} transform - function to apply to each sky point passed as argument.
+   */
   SkySphere.prototype.applyTransform = function (transform) {
     var i;
     // Update constellation lines
@@ -5676,11 +5730,11 @@ SkySphere = function (constellations) {
     }
   };
   /**
-  * Rotate the sphere using the mouse drag.
-  * @private
-  * @param {float} dx - position offset on x axis.
-  * @param {float} dy - position offset on y axis.
-  */
+   * Rotate the sphere using the mouse drag.
+   * @private
+   * @param {float} dx - position offset on x axis.
+   * @param {float} dy - position offset on y axis.
+   */
   SkySphere.prototype.rotateXY = function (dx, dy) {
     var x, y, z, k;
     var sindx = Math.sin(dx), cosdx = Math.cos(dx), sindy = Math.sin(dy), cosdy = Math.cos(dy);
@@ -5699,9 +5753,9 @@ SkySphere = function (constellations) {
   SkySphere.prototype._centeringXTimeout = null;
   SkySphere.prototype._centeringYTimeout = null;
   /**
-  * Show an animation that move a sky point to the center of the sphere, first horizontally, then vertically.
-  * @param {object} skyPoint - the point to center.
-  */
+   * Show an animation that move a sky point to the center of the sphere, first horizontally, then vertically.
+   * @param {object} skyPoint - the point to center.
+   */
   SkySphere.prototype.centerSkyPoint = function (skyPoint) {
     var self = this;
     // If we want to center a point while another point is already centering we have to stop previous animations.
@@ -5738,9 +5792,9 @@ SkySphere = function (constellations) {
     moveXUntilCenter();
   };
   /**
-  * Zoom the sphere multiplying the current radius to the zoomFactor.
-  * @param {float} zoomFactor
-  */
+   * Zoom the sphere multiplying the current radius to the zoomFactor.
+   * @param {float} zoomFactor
+   */
   SkySphere.prototype.zoom = function (zoomFactor) {
     var self = this;
     this.radius = this.radius * zoomFactor;
@@ -5755,19 +5809,19 @@ SkySphere = function (constellations) {
     this.drawSky();
   };
   /**
-  * Zoom the sphere relying on its initial radius.
-  * @param {float} zoomFactor
-  */
+   * Zoom the sphere relying on its initial radius.
+   * @param {float} zoomFactor
+   */
   SkySphere.prototype.absoluteZoom = function (zoomFactor) {
     this.zoom(this.initialRadius * zoomFactor / this.radius);
   };
   /**
-  * Change the container size and rescale the sky.
-  * @param {int} width - new width of the container.
-  * @param {int} height - new height of the container.
-  * @param {bool} resize - optional param to indicate if we want to adapt the sphere to the container size after container resizing.
-  * @param {float} paddingPercentage - percentage (from 0 to 1) of canvas size to leave empty between sphere and container border.
-  */
+   * Change the container size and rescale the sky.
+   * @param {int} width - new width of the container.
+   * @param {int} height - new height of the container.
+   * @param {bool} resize - optional param to indicate if we want to adapt the sphere to the container size after container resizing.
+   * @param {float} paddingPercentage - percentage (from 0 to 1) of canvas size to leave empty between sphere and container border.
+   */
   SkySphere.prototype.setContainerSize = function (width, height, resize, paddingPercentage) {
     var offsetX = (width - this.containerWidth) / 2;
     var offsetY = (height - this.containerHeight) / 2;
@@ -5782,18 +5836,18 @@ SkySphere = function (constellations) {
     }
   };
   /**
-  * Add a custom object point.
-  * @param {float} ra - Right Ascension (in hours, from 0 to 24)
-  * @param {float} dec - Declination (in degree, from -90 to 90)
-  * @param {object} data - custom optional data to add to the object.
-  * @returns {object} the generated sky point.
-  * @description The "data" option is an object that supports this properties:
-  * <ul>
-  * <li><strong>color</strong>: custom color in hexadecimal format (default is '#ff0000').</li>
-  * <li><strong>radius</strong>: radius in pixels (default is 2).</li>
-  * <li><strong>clickData</strong>: object that will be passed to the <strong>customOnClick</strong> function when clicking on the custom object.</li>
-  * </ul>
-  */
+   * Add a custom object point.
+   * @param {float} ra - Right Ascension (in hours, from 0 to 24)
+   * @param {float} dec - Declination (in degree, from -90 to 90)
+   * @param {object} data - custom optional data to add to the object.
+   * @returns {object} the generated sky point.
+   * @description The "data" option is an object that supports this properties:
+   * <ul>
+   * <li><strong>color</strong>: custom color in hexadecimal format (default is '#ff0000').</li>
+   * <li><strong>radius</strong>: radius in pixels (default is 2).</li>
+   * <li><strong>custom properties</strong>: properties that could be used inside <strong>customOnClick</strong> or <strong>getObjectText</strong> functions.</li>
+   * </ul>
+   */
   SkySphere.prototype.addCustomObject = function (ra, dec, data) {
     var skyPoint = this.generateSkyPoint(ra2rad(ra), dec2rad(dec), data);
     this.objectPoints.push(skyPoint);
