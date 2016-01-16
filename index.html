@@ -90,10 +90,13 @@
                 width: document.documentElement.clientWidth,
                 height: 400,
                 customOnClick: function (data) {
-                    alert(data);
+                    alert(data.clickData);
+                },
+                getObjectText: function (data) {
+					return data.name;
                 }
             });
-            var m42 = sky.addCustomObject(5.58814, -4.92319, {clickData: 'M 42 - the Great Orion Nebula'});
+            var m42 = sky.addCustomObject(5.58814, -4.92319, {name: 'Orion Nebula', clickData: 'M42 - the Great Orion Nebula'});
             sky.drawSky();
             window.addEventListener('resize', function () {
                 sky.setContainerSize(document.documentElement.clientWidth, 400, true);
