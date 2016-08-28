@@ -5493,6 +5493,7 @@ SkySphere = function (constellations) {
     return ra * 2 * Math.PI / 24;
   }
   var renew;
+  var inStep = false;
   function step() {
     renew = false;
     for (var i = 0; i < instances.length; i++) {
@@ -5501,16 +5502,17 @@ SkySphere = function (constellations) {
         instances[i].drawSky();
       }
     }
-    if (renew) {
-      nextFrame();
-    }
+    inStep = false;
   }
   function nextFrame() {
-    if (window.requestAnimationFrame) {
-      window.requestAnimationFrame(step);
-    } else {
-      setTimeout(step, 1000 / FPS);
-    }
+    if (!inStep) {
+      inStep = true;
+      if (window.requestAnimationFrame) {
+        window.requestAnimationFrame(step);
+      } else {
+        setTimeout(step, 1000 / FPS);
+      }
+    }  // else skip frame
   }
   /**
    * Represents a sky map.
@@ -5584,6 +5586,7 @@ SkySphere = function (constellations) {
       self.rotateXY((e.clientX - prevX) / self.radius, (e.clientY - prevY) / self.radius);
       prevX = e.clientX;
       prevY = e.clientY;
+      nextFrame();
     }
     function stopMove() {
       self.isMoving = false;
@@ -5627,6 +5630,9 @@ SkySphere = function (constellations) {
         self.zoom(e.wheelDeltaY < 0 ? 0.9 : 1.1);
       }
     });
+  };
+  SkySphere.prototype.setRadius = function (radius) {
+    this.zoom(radius / this.radius);
   };
   SkySphere.prototype.generateSkyPoint = function (ra, dec, data) {
     var skyPoint = {
@@ -5750,8 +5756,7 @@ SkySphere = function (constellations) {
       skyPoint.z = y * sindy + cosdy * k;
     });
   };
-  SkySphere.prototype._centeringXTimeout = null;
-  SkySphere.prototype._centeringYTimeout = null;
+  SkySphere.prototype._currentAnimationTimeout = null;
   /**
    * Show an animation that move a sky point to the center of the sphere, first horizontally, then vertically.
    * @param {object} skyPoint - the point to center.
@@ -5759,12 +5764,7 @@ SkySphere = function (constellations) {
   SkySphere.prototype.centerSkyPoint = function (skyPoint) {
     var self = this;
     // If we want to center a point while another point is already centering we have to stop previous animations.
-    if (this._centeringXTimeout) {
-      clearTimeout(this._centeringXTimeout);
-    }
-    if (this._centeringYTimeout) {
-      clearTimeout(this._centeringYTimeout);
-    }
+    this.stopMoving();
     var centerX = this.containerWidth / 2;
     var centerY = this.containerHeight / 2;
     var dx = skyPoint.x < centerX ? 0.05 : -0.05;
@@ -5773,23 +5773,41 @@ SkySphere = function (constellations) {
       var x = skyPoint.x - centerX;
       if (x !== 0 && (dx > 0 && x < 0) || dx < 0 && x > 0) {
         self.rotateXY(dx, 0);
-        self._centeringXTimeout = setTimeout(moveXUntilCenter, 30);
+        self._currentAnimationTimeout = setTimeout(moveXUntilCenter, 32);
       } else {
         moveYUntilCenter();
       }
+      nextFrame();
     }
     function moveYUntilCenter() {
       var y = -skyPoint.y + centerY;
       if (y !== 0 && (dy > 0 && y < 0) || dy < 0 && y > 0) {
         self.rotateXY(0, -dy);
-        self._centeringYTimeout = setTimeout(moveYUntilCenter, 30);
+        self._currentAnimationTimeout = setTimeout(moveYUntilCenter, 32);
+        nextFrame();
       } else {
         self.isMoving = false;
       }
     }
     this.isMoving = true;
-    nextFrame();
     moveXUntilCenter();
+  };
+  SkySphere.prototype.stopMoving = function () {
+    if (this._currentAnimationTimeout) {
+      clearTimeout(this._currentAnimationTimeout);
+      this.isMoving = true;
+    }
+  };
+  SkySphere.prototype.rotateXYAnimation = function (dx, dy) {
+    this.stopMoving();
+    this.isMoving = true;
+    var self = this;
+    function rotateAnimation() {
+      self.rotateXY(dx, dy);
+      self.drawSky();
+      nextFrame();
+    }
+    this._currentAnimationTimeout = setInterval(rotateAnimation, 32);
   };
   /**
    * Zoom the sphere multiplying the current radius to the zoomFactor.

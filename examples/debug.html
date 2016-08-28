@@ -29,6 +29,8 @@
         <button type="button" id="zoom_minus">Zoom -</button>
         <button type="button" id="zoom_plus">Zoom +</button>
         <button type="button" id="center_sun">Center Sun</button>
+        <button type="button" id="animate">Animate</button>
+        <button type="button" id="stop">Stop</button>
         <script>
             require(['SkySphere'], function (SkySphere) {
                 var sky1 = new SkySphere('sky1', {
@@ -49,6 +51,13 @@
 
                 document.getElementById('center_sun').addEventListener('click', function () {
                     sky1.centerSkyPoint(sun);
+                });
+
+                document.getElementById('animate').addEventListener('click', function () {
+                    sky1.rotateXYAnimation(-0.01, 0.01);
+                });
+                document.getElementById('stop').addEventListener('click', function () {
+                    sky1.stopMoving();
                 });
 
                 var zoomFactor = 1;
