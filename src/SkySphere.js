@@ -51,6 +51,7 @@ class SkySphere {
     this.isMoving = false;
     this.overObjectIndex = null;
     this._currentAnimationTimeout = null;
+    this._currentAnimationInterval = null;
 
     this.init(elementId);
 
@@ -77,7 +78,6 @@ class SkySphere {
 
   step() {
     renew = false;
-
     for (let i = 0; i < instances.length; i++) {
       if (instances[i].isMoving) {
         renew = true;
@@ -180,11 +180,10 @@ class SkySphere {
       clientRect = self.canvas.getBoundingClientRect();
       let x = e.clientX - clientRect.left;
       let y = e.clientY - clientRect.top;
-
-      let i = 0,
-        overIndex = null;
+      let i = 0;
+      let overIndex = null;
       while (i < self.objectPoints.length && (overIndex === null)) {
-        skyPoint = self.objectPoints[i];
+        let skyPoint = self.objectPoints[i];
         if (skyPoint.z > 0 && Math.abs(x - skyPoint.x) <= area && Math.abs(y - skyPoint.y) <= area) {
           overIndex = i;
         }
@@ -395,12 +394,14 @@ class SkySphere {
     moveXUntilCenter();
   }
 
-
   stopMoving() {
     if (this._currentAnimationTimeout) {
       clearTimeout(this._currentAnimationTimeout);
-      this.isMoving = true;
     }
+    if (this._currentAnimationInterval) {
+      clearInterval(this._currentAnimationInterval);
+    }
+    this.isMoving = false;
   }
 
   rotateXYAnimation(dx, dy) {
@@ -415,7 +416,7 @@ class SkySphere {
       self.nextFrame();
     }
 
-    this._currentAnimationTimeout = setInterval(rotateAnimation, 32);
+    this._currentAnimationInterval = setInterval(rotateAnimation, 32);
   }
 
   /**
@@ -492,7 +493,4 @@ class SkySphere {
 }
 
 window.SkySphere = SkySphere;
-
-module.exports = {
-  SkySphere
-};
+module.exports = SkySphere;

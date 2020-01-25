@@ -5,3 +5,4 @@ lib
 data/*.class
 data/hygdata_v3.csv
 data/clines.dat
+.nyc_output/
