@@ -2,7 +2,8 @@
 <html>
     <head>
         <title>Example</title>
-        <script src="../dist/sky-sphere.min.js"></script>
+        <meta charset="utf-8" />
+        <script src="../dist/sky-sphere.js"></script>
         <style>
             body {
                 margin: 0;
@@ -21,6 +22,8 @@
         <button type="button" id="zoom_minus">Zoom -</button>
         <button type="button" id="zoom_plus">Zoom +</button>
         <button type="button" id="center_sun">Center Sun</button>
+        <button type="button" id="animate">Animate</button>
+        <button type="button" id="stop">Stop</button>
         <script>
             var sky1 = new SkySphere('sky1', {
                 width: window.innerWidth,
@@ -42,14 +45,18 @@
                 sky1.centerSkyPoint(sun);
             });
 
-            var zoomFactor = 1;
             document.getElementById('zoom_minus').addEventListener('click', function () {
-                zoomFactor -= 0.1;
-                sky1.absoluteZoom(zoomFactor);
+                sky1.zoom(0.9);
             });
             document.getElementById('zoom_plus').addEventListener('click', function () {
-                zoomFactor += 0.1;
-                sky1.absoluteZoom(zoomFactor);
+                sky1.zoom(1.1);
+            });
+
+            document.getElementById('animate').addEventListener('click', function () {
+                sky1.rotateXYAnimation(-0.01, 0.01);
+            });
+            document.getElementById('stop').addEventListener('click', function () {
+                sky1.stopMoving();
             });
 
             window.addEventListener('resize', function () {

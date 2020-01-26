@@ -112,11 +112,11 @@ describe('SkySphere', function() {
       assert(strokeText.called);
     });
 
-    it('should zoom on mousewheel', function() {
+    it('should zoom on mouse wheel', function() {
       let sky = getSky();
       let zoom = sinon.spy(sky, 'zoom');
-      let event = getPositionalEvent('mousewheel', 250, 250);
-      event.wheelDeltaY = 1.1;
+      let event = getPositionalEvent('wheel', 250, 250);
+      event.deltaY = 1.1;
       canvas.dispatchEvent(event);
       assert(zoom.called);
     });

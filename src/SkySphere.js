@@ -15,10 +15,8 @@ let renew = false;
 
 /**
  * Represents a sky map.
- * @module SkySphere
- * @private
+ * @class
  * @requires module:constellations
- * @returns {function} SkySphere constructor.
  */
 class SkySphere {
 
@@ -195,14 +193,14 @@ class SkySphere {
       }
     });
 
-    this.canvas.addEventListener('mousewheel', function(e) {
+    this.canvas.addEventListener('wheel', function(e) {
       clientRect = self.canvas.getBoundingClientRect();
       let x = e.clientX - clientRect.left;
       let y = e.clientY - clientRect.top;
 
       if (Math.pow(x - self.containerWidth / 2, 2) + Math.pow(y - self.containerHeight / 2, 2) <= Math.pow(self.radius, 2)) {
         e.preventDefault();
-        self.zoom(e.wheelDeltaY < 0 ? .9 : 1.1);
+        self.zoom(e.deltaY > 0 ? .9 : 1.1);
       }
     });
   }
@@ -227,7 +225,6 @@ class SkySphere {
 
   /**
    * Draw constellations lines and stars and added custom objects.
-   * @private
    */
   drawSky() {
     let context = this.context;
