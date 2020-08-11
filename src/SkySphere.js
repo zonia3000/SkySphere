@@ -10,7 +10,12 @@ define(['constellations'], function (constellations) {
     // Frame Per Second: used in browser that don't support requestAnimationFrame.
     var FPS = 15;
 
-    var supportTouch = 'ontouchstart' in window;
+    var supportTouch = 'ontouchstart' in window || 'ontouchstart' in document.documentElement || navigator.maxTouchPoints > 0;
+    var supportMouse = 'onmousemove' in window || 'onmousemove' in document.documentElement;
+    if (!supportTouch && !supportMouse) {
+        // assume at least mouse is supported
+        supportMouse = true;
+    }
     // Size of the sensitive area around a sky point that detects clicks.
     var area = supportTouch ? 15 : 6;
 
@@ -123,7 +128,7 @@ define(['constellations'], function (constellations) {
 
         function startMove(event) {
             event.preventDefault();
-            e = supportTouch ? event.touches[0] : event;
+            e = (event.touches && event.touches.length > 0) ? event.touches[0] : event;
 
             self.isMoving = true;
 
@@ -134,13 +139,20 @@ define(['constellations'], function (constellations) {
             x = startX - clientRect.left;
             y = startY - clientRect.top;
 
-            window.addEventListener(supportTouch ? 'touchmove' : 'mousemove', onMove, false);
-            window.addEventListener(supportTouch ? 'touchend' : 'mouseup', stopMove, false);
+            self.overObjectIndex = null;
+            if (supportTouch) {
+                window.addEventListener('touchmove', onMove, false);
+                window.addEventListener('touchend', stopMove, false);
+            }
+            if (supportMouse) {
+                window.addEventListener('mousemove', onMove, false);
+                window.addEventListener('mouseup', stopMove, false);
+            }
             nextFrame();
         }
 
         function onMove(event) {
-            e = supportTouch ? event.touches[0] : event;
+            e = (event.touches && event.touches.length > 0) ? event.touches[0] : event;
             self.rotateXY((e.clientX - prevX) / self.radius, (e.clientY - prevY) / self.radius);
             prevX = e.clientX;
             prevY = e.clientY;
@@ -149,8 +161,14 @@ define(['constellations'], function (constellations) {
 
         function stopMove() {
             self.isMoving = false;
-            window.removeEventListener(supportTouch ? 'touchmove' : 'mousemove', onMove, false);
-            window.removeEventListener(supportTouch ? 'touchend' : 'mouseup', stopMove, false);
+            if(supportTouch) {
+              window.removeEventListener('touchmove', onMove, false);
+              window.removeEventListener('touchend', stopMove, false);
+            }
+            if(supportMouse) {
+              window.removeEventListener('mousemove', onMove, false);
+              window.removeEventListener('mouseup', stopMove, false);
+            }
 
             if (prevX === startX && prevY === startY && self.options.customOnClick) {
                 // single click detected!
@@ -164,9 +182,15 @@ define(['constellations'], function (constellations) {
             }
         }
 
-        this.canvas.addEventListener(supportTouch ? 'touchstart' : 'mousedown', startMove);
+        if(supportTouch) {
+          this.canvas.addEventListener('touchstart', startMove);
+        }
+        if(supportMouse) {
+          this.canvas.addEventListener('mousedown', startMove);
+        }
 
-        this.canvas.addEventListener('mousemove', function (e) {
+        function detectOver(event) {
+            var e = (event.changedTouches && event.changedTouches.length > 0) ? event.changedTouches[0] : event;
             clientRect = self.canvas.getBoundingClientRect();
             var x = e.clientX - clientRect.left;
             var y = e.clientY - clientRect.top;
@@ -183,7 +207,16 @@ define(['constellations'], function (constellations) {
                 self.overObjectIndex = overIndex;
                 self.drawSky();
             }
-        });
+        }
+
+        if (supportTouch) {
+            // for touch display the text after direct touch on object
+            this.canvas.addEventListener('touchend', detectOver);
+        }
+        if (supportMouse) {
+            // for mouse display the text on mouse over an object
+            this.canvas.addEventListener('mousemove', detectOver);
+        }
 
         this.canvas.addEventListener('mousewheel', function (e) {
             clientRect = self.canvas.getBoundingClientRect();
