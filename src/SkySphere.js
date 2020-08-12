@@ -3,7 +3,12 @@ const constellations = require('../data/constellations.js');
 // Frame Per Second: used in browser that don't support requestAnimationFrame.
 let FPS = 15;
 
-let supportTouch = 'ontouchstart' in window;
+let supportTouch = 'ontouchstart' in window || 'ontouchstart' in document.documentElement || navigator.maxTouchPoints > 0;
+let supportMouse = 'onmousemove' in window || 'onmousemove' in document.documentElement;
+if (!supportTouch && !supportMouse) {
+  // assume at least mouse is supported
+  supportMouse = true;
+}
 // Size of the sensitive area around a sky point that detects clicks.
 let area = supportTouch ? 15 : 6;
 
@@ -131,7 +136,7 @@ class SkySphere {
 
     function startMove(event) {
       event.preventDefault();
-      e = supportTouch ? event.touches[0] : event;
+      e = event.touches && event.touches.length > 0 ? event.touches[0] : event;
 
       self.isMoving = true;
 
@@ -142,13 +147,21 @@ class SkySphere {
       x = startX - clientRect.left;
       y = startY - clientRect.top;
 
-      window.addEventListener(supportTouch ? 'touchmove' : 'mousemove', onMove, false);
-      window.addEventListener(supportTouch ? 'touchend' : 'mouseup', stopMove, false);
+      self.overObjectIndex = null;
+      if (supportTouch) {
+        window.addEventListener('touchmove', onMove, false);
+        window.addEventListener('touchend', stopMove, false);
+      }
+      if (supportMouse) {
+        window.addEventListener('mousemove', onMove, false);
+        window.addEventListener('mouseup', stopMove, false);
+      }
+
       self.nextFrame();
     }
 
     function onMove(event) {
-      e = supportTouch ? event.touches[0] : event;
+      e = event.touches && event.touches.length > 0 ? event.touches[0] : event;
       self.rotateXY((e.clientX - prevX) / self.radius, (e.clientY - prevY) / self.radius);
       prevX = e.clientX;
       prevY = e.clientY;
@@ -157,8 +170,14 @@ class SkySphere {
 
     function stopMove() {
       self.isMoving = false;
-      window.removeEventListener(supportTouch ? 'touchmove' : 'mousemove', onMove, false);
-      window.removeEventListener(supportTouch ? 'touchend' : 'mouseup', stopMove, false);
+      if (supportTouch) {
+        window.removeEventListener('touchmove', onMove, false);
+        window.removeEventListener('touchend', stopMove, false);
+      }
+      if (supportMouse) {
+        window.removeEventListener('mousemove', onMove, false);
+        window.removeEventListener('mouseup', stopMove, false);
+      }
 
       if (prevX === startX && prevY === startY && self.options.customOnClick) {
         // single click detected!
@@ -172,9 +191,15 @@ class SkySphere {
       }
     }
 
-    this.canvas.addEventListener(supportTouch ? 'touchstart' : 'mousedown', startMove);
+    if (supportTouch) {
+      this.canvas.addEventListener('touchstart', startMove);
+    }
+    if (supportMouse) {
+      this.canvas.addEventListener('mousedown', startMove);
+    }
 
-    this.canvas.addEventListener('mousemove', function(e) {
+    function detectOver(event) {
+      var e = event.changedTouches && event.changedTouches.length > 0 ? event.changedTouches[0] : event;
       clientRect = self.canvas.getBoundingClientRect();
       let x = e.clientX - clientRect.left;
       let y = e.clientY - clientRect.top;
@@ -191,7 +216,16 @@ class SkySphere {
         self.overObjectIndex = overIndex;
         self.drawSky();
       }
-    });
+    }
+
+    if (supportTouch) {
+      // for touch display the text after direct touch on object
+      this.canvas.addEventListener('touchend', detectOver);
+    }
+    if (supportMouse) {
+      // for mouse display the text on mouse over an object
+      this.canvas.addEventListener('mousemove', detectOver);
+    }
 
     this.canvas.addEventListener('wheel', function(e) {
       clientRect = self.canvas.getBoundingClientRect();
