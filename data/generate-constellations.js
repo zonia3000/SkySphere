@@ -1,6 +1,8 @@
 const https = require('https');
 const fs = require('fs');
 
+process.chdir('./data');
+
 const clinesUrl = "https://cdn.jsdelivr.net/gh/KDE/kstars/kstars/data/clines.dat";
 const hygdataUrl = "https://raw.githubusercontent.com/astronexus/HYG-Database/master/hygdata_v3.csv";
 
@@ -15,18 +17,24 @@ class Star {
   }
 }
 
+function chainError(err) {
+  console.log("An error happened");
+  console.log(err);
+  return Promise.reject(err);
+};
+
 Promise.all([
     downloadIfMissing("clines.dat", clinesUrl),
     downloadIfMissing("hygdata_v3.csv", hygdataUrl)
   ])
-  .then(() => fillStarsMap())
-  .then(allStars => fillConstellations(allStars))
+  .then(() => fillStarsMap(), chainError)
+  .then(allStars => fillConstellations(allStars), chainError)
   .then(constellations => {
     let content = "module.exports=" + JSON.stringify(constellations);
     fs.writeFileSync('constellations.js', content);
     console.log("Constellations file successfully generated! :-)");
-  })
-  .catch(err => console.log(err));
+  }, chainError)
+  .catch(err => process.exit(1));
 
 function downloadIfMissing(fileName, fileUrl) {
   return new Promise((resolve, reject) => {

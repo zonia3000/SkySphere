@@ -3,6 +3,6 @@
 node_modules
 lib
 data/*.class
-data/hygdata_v3.csv
-data/clines.dat
+hygdata_v3.csv
+clines.dat
 .nyc_output/

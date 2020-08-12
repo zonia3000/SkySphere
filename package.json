@@ -1,6 +1,6 @@
 {
   "name": "sky-sphere",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "title": "SkySphere",
   "description": "A JavaScript sky map",
   "author": {
@@ -17,23 +17,39 @@
     "skymap",
     "library"
   ],
+  "license": "GNU Public License, version 2",
   "licenses": [
     {
       "type": "GPLv2",
       "url": "https://github.com/zonia3000/SkySphere/blob/master/LICENSE"
     }
   ],
+  "scripts": {
+    "prebuild": "node data/generate-constellations.js",
+    "build": "webpack",
+    "test": "nyc mocha -r jsdom-global/register",
+    "docs": "./node_modules/jsdoc/jsdoc.js src/SkySphere.js -d './docs' -p"
+  },
   "devDependencies": {
+    "@babel/core": "^7.8.3",
+    "@babel/helper-compilation-targets": "^7.10.4",
+    "@babel/preset-env": "^7.8.3",
     "amdclean": "^2.7.0",
-    "grunt": "~0.4.1",
-    "grunt-contrib-requirejs": "^0.4.4",
-    "grunt-contrib-uglify": "~0.2.1",
-    "grunt-notify": "~0.2.7",
-    "jsdocs": "^0.1.0",
-    "matchdep": "~0.1.2"
+    "babel-loader": "^8.0.6",
+    "jsdoc": "^3.6.3",
+    "jsdom": "^16.4.0",
+    "jsdom-global": "3.0.2",
+    "matchdep": "~0.1.2",
+    "mocha": "^7.0.0",
+    "nyc": "^15.0.0",
+    "sinon": "^8.1.1",
+    "uglifyjs-webpack-plugin": "^2.2.0",
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10"
   },
   "engines": {
     "node": ">=0.10.17",
     "npm": ">=1.3.8"
-  }
+  },
+  "dependencies": {}
 }
